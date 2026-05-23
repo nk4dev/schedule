@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>カレンダーに予定を追加</title>
+
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- FontAwesome -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+
+        <style>
+            /* 背景のアニメーショングラデーション */
+            .bg-animated {
+                background: linear-gradient(
+                    -45deg,
+                    #4f46e5,
+                    #9333ea,
+                    #db2777,
+                    #ea580c
+                );
+                background-size: 400% 400%;
+                animation: gradientBG 15s ease infinite;
+            }
+            @keyframes gradientBG {
+                0% {
+                    background-position: 0% 50%;
+                }
+                50% {
+                    background-position: 100% 50%;
+                }
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
+
+            /* 押しやすいボタンスタイル（タッチデバイス最適化） */
+            .tap-highlight-transparent {
+                -webkit-tap-highlight-color: transparent;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-animated min-h-screen flex items-center justify-center p-4 font-sans text-gray-800 antialiased selection:bg-indigo-300 selection:text-white"
+    >
+        <!-- メインカード (Glassmorphism) -->
+        <main
+            class="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-3xl p-6 sm:p-8 transform transition-all"
+        >
+            <!-- ヘッダーアイコン -->
+            <div class="flex justify-center mb-6">
+                <div
+                    class="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6"
+                >
+                    <i
+                        class="fa-regular fa-calendar-check text-white text-3xl transform rotate-6"
+                    ></i>
+                </div>
+            </div>
+
+            <!-- 予定のタイトル -->
+            <h1
+                id="event-title"
+                class="text-2xl sm:text-3xl font-extrabold text-center text-gray-900 mb-6 leading-tight break-words"
+            >
+                読み込み中...
+            </h1>
+
+            <!-- 自動ダウンロード時のメッセージ -->
+            <div
+                id="auto-dl-message"
+                class="hidden bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm mb-6 flex items-start gap-3 shadow-sm transition-opacity duration-300"
+            >
+                <i
+                    class="fa-solid fa-circle-check mt-0.5 text-emerald-500 text-lg"
+                ></i>
+                <p class="font-medium leading-relaxed">
+                    カレンダーファイルを自動ダウンロードしました。<br />
+                    <span class="text-xs text-emerald-600/80"
+                        >※もし開始されない場合は、下のボタンから登録してください。</span
+                    >
+                </p>
+            </div>
+
+            <!-- 予定の日時詳細 -->
+            <div
+                class="bg-white/60 rounded-2xl p-4 sm:p-5 mb-8 shadow-inner border border-gray-100/50 flex flex-col gap-3"
+            >
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0"
+                    >
+                        <i
+                            class="fa-regular fa-calendar text-indigo-600 text-sm"
+                        ></i>
+                    </div>
+                    <span
+                        id="event-date"
+                        class="font-bold text-gray-700 text-lg tracking-wide"
+                    ></span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0"
+                    >
+                        <i
+                            class="fa-regular fa-clock text-purple-600 text-sm"
+                        ></i>
+                    </div>
+                    <span
+                        id="event-time"
+                        class="font-bold text-gray-700 text-lg tracking-wide"
+                    ></span>
+                </div>
+            </div>
+
+            <!-- アクションボタン群 -->
+            <div class="flex flex-col gap-4">
+                <!-- Apple / 汎用 (ICS) -->
+                <button
+                    id="btn-apple"
+                    class="tap-highlight-transparent w-full min-h-[56px] bg-gray-900 text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-gray-900/20 transition-transform duration-200 active:scale-[0.96] hover:bg-gray-800 text-[15px]"
+                >
+                    <i class="fa-brands fa-apple text-xl"></i>
+                    Apple / 汎用カレンダー
+                </button>
+
+                <!-- Google Calendar -->
+                <button
+                    id="btn-google"
+                    class="tap-highlight-transparent w-full min-h-[56px] bg-white text-gray-700 border border-gray-200 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.96] hover:bg-gray-50 text-[15px]"
+                >
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
+                        <path
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                            fill="#4285F4"
+                        />
+                        <path
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                            fill="#34A853"
+                        />
+                        <path
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                            fill="#FBBC05"
+                        />
+                        <path
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                            fill="#EA4335"
+                        />
+                        <path d="M1 1h22v22H1z" fill="none" />
+                    </svg>
+                    Google カレンダー
+                </button>
+
+                <!-- Outlook Calendar -->
+                <button
+                    id="btn-outlook"
+                    class="tap-highlight-transparent w-full min-h-[56px] bg-[#0078D4] text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-blue-600/20 transition-transform duration-200 active:scale-[0.96] hover:bg-[#106EBE] text-[15px]"
+                >
+                    <i class="fa-brands fa-microsoft text-xl"></i>
+                    Microsoft Outlook
+                </button>
+            </div>
+        </main>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                // URLパラメータの取得
+                const params = new URLSearchParams(window.location.search);
+                const title = params.get("title") || "新規予定";
+                const dateStr = params.get("date") || "";
+                const timeStr = params.get("time") || "";
+                const addcaltype = params.get("addcaltype") || "";
+
+                // 画面表示用・生成用変数の初期化
+                let displayDate = "未定";
+                let displayTime = "終日";
+                let isAllDay = true;
+
+                // 各プラットフォーム用日時フォーマット
+                let startStrICS = "";
+                let endStrICS = "";
+                let startStrGoogle = "";
+                let endStrGoogle = "";
+                let startStrOutlook = "";
+                let endStrOutlook = "";
+
+                // 日付のパース (YYYYMMDD形式を想定)
+                if (dateStr && dateStr.length === 8) {
+                    const y = dateStr.substring(0, 4);
+                    const m = dateStr.substring(4, 6);
+                    const d = dateStr.substring(6, 8);
+
+                    displayDate = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+
+                    // 翌日の計算 (終日対応用)
+                    const dateObj = new Date(
+                        parseInt(y),
+                        parseInt(m) - 1,
+                        parseInt(d),
+                    );
+                    dateObj.setDate(dateObj.getDate() + 1);
+
+                    const nextY = dateObj.getFullYear();
+                    const nextM = String(dateObj.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                    );
+                    const nextD = String(dateObj.getDate()).padStart(2, "0");
+                    const nextDayDate = `${nextY}${nextM}${nextD}`;
+                    const nextDayHyphen = `${nextY}-${nextM}-${nextD}`;
+
+                    // 時間のパース (HHMM-HHMM形式を想定)
+                    if (timeStr && timeStr.includes("-")) {
+                        isAllDay = false;
+                        const times = timeStr.split("-");
+                        const sh = times[0].substring(0, 2);
+                        const sm = times[0].substring(2, 4);
+                        const eh = times[1].substring(0, 2);
+                        const em = times[1].substring(2, 4);
+
+                        displayTime = `${sh}:${sm} 〜 ${eh}:${em}`;
+
+                        // ICS用 (タイムゾーン付きローカル時間)
+                        startStrICS = `${dateStr}T${sh}${sm}00`;
+                        endStrICS = `${dateStr}T${eh}${em}00`;
+
+                        // Google用
+                        startStrGoogle = startStrICS;
+                        endStrGoogle = endStrICS;
+
+                        // Outlook用 (YYYY-MM-DDTHH:mm:ss形式)
+                        startStrOutlook = `${y}-${m}-${d}T${sh}:${sm}:00`;
+                        endStrOutlook = `${y}-${m}-${d}T${eh}:${em}:00`;
+                    } else {
+                        isAllDay = true;
+                        displayTime = "終日";
+
+                        // 終日イベントの場合、終了日は「翌日」を指定する
+                        startStrICS = dateStr;
+                        endStrICS = nextDayDate;
+
+                        startStrGoogle = dateStr;
+                        endStrGoogle = nextDayDate;
+
+                        startStrOutlook = `${y}-${m}-${d}`;
+                        endStrOutlook = nextDayHyphen;
+                    }
+                } else {
+                    displayDate = "日付指定なし（URLを確認してください）";
+                }
+
+                // 画面のDOM更新
+                document.getElementById("event-title").textContent = title;
+                document.getElementById("event-date").textContent = displayDate;
+                document.getElementById("event-time").textContent = displayTime;
+
+                // 1. ICSファイルの動的生成・ダウンロード処理 (Apple / 汎用)
+                const downloadICS = () => {
+                    let icsContent =
+                        "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//nknighta//Schedule//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n";
+                    icsContent += "BEGIN:VEVENT\n";
+                    icsContent += `UID:${Date.now()}@nknighta.me\n`;
+                    icsContent += `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z\n`;
+
+                    if (isAllDay) {
+                        icsContent += `DTSTART;VALUE=DATE:${startStrICS}\n`;
+                        icsContent += `DTEND;VALUE=DATE:${endStrICS}\n`;
+                    } else {
+                        icsContent += `DTSTART;TZID=Asia/Tokyo:${startStrICS}\n`;
+                        icsContent += `DTEND;TZID=Asia/Tokyo:${endStrICS}\n`;
+                    }
+
+                    icsContent += `SUMMARY:${title}\n`;
+                    // 改行は \n にエスケープして記述
+                    icsContent +=
+                        "DESCRIPTION:この予定は nknighta スケジュール共有ツールより登録されました。\\n\\n詳細はこちら: " +
+                        window.location.href +
+                        "\n";
+                    icsContent += "END:VEVENT\nEND:VCALENDAR";
+
+                    const blob = new Blob([icsContent], {
+                        type: "text/calendar;charset=utf-8;",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.setAttribute("download", `${title}.ics`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
+                // 2. GoogleカレンダーURLの生成 (エンコードによるバグを防ぐため手動結合)
+                const googleUrl =
+                    "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+                    "&text=" +
+                    encodeURIComponent(title) +
+                    "&dates=" +
+                    startStrGoogle +
+                    "/" +
+                    endStrGoogle +
+                    (isAllDay ? "" : "&ctz=Asia/Tokyo");
+
+                // 3. OutlookカレンダーURLの生成
+                const outlookUrl =
+                    "https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent" +
+                    "&subject=" +
+                    encodeURIComponent(title) +
+                    "&startdt=" +
+                    encodeURIComponent(startStrOutlook) +
+                    "&enddt=" +
+                    encodeURIComponent(endStrOutlook) +
+                    (isAllDay ? "&allday=true" : "");
+
+                // ボタンクリックイベントの設定
+                document
+                    .getElementById("btn-apple")
+                    .addEventListener("click", downloadICS);
+
+                document
+                    .getElementById("btn-google")
+                    .addEventListener("click", () => {
+                        window.open(googleUrl, "_blank", "noopener,noreferrer");
+                    });
+
+                document
+                    .getElementById("btn-outlook")
+                    .addEventListener("click", () => {
+                        window.open(
+                            outlookUrl,
+                            "_blank",
+                            "noopener,noreferrer",
+                        );
+                    });
+
+                // addcaltype=ics パラメータ指定時の自動ダウンロード処理
+                if (addcaltype === "ics" && dateStr.length === 8) {
+                    // 少しだけ遅延させてDOMの描画を優先する
+                    setTimeout(() => {
+                        downloadICS();
+                        // メッセージをフェードイン表示
+                        const msgEl =
+                            document.getElementById("auto-dl-message");
+                        msgEl.classList.remove("hidden");
+                        msgEl.classList.add("animate-pulse");
+                        setTimeout(
+                            () => msgEl.classList.remove("animate-pulse"),
+                            1500,
+                        );
+                    }, 500);
+                }
+            });
+        </script>
+    </body>
+</html>
