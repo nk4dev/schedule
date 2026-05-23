@@ -30,7 +30,7 @@
             .bg-animation {
                 background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
                 position: relative;
-                overflow: hidden;
+                overflow-x: hidden;
             }
             .blob {
                 position: absolute;
@@ -50,14 +50,14 @@
                 width: 500px;
                 height: 500px;
                 background: #34a853;
-                bottom: -20%;
+                bottom: -10%;
                 right: -10%;
             }
             .blob-3 {
                 width: 300px;
                 height: 300px;
                 background: #fbbc05;
-                top: 40%;
+                top: 30%;
                 right: 15%;
             }
             /* ガラスモルフィズム風カード効果 */
@@ -67,10 +67,18 @@
                 -webkit-backdrop-filter: blur(10px);
                 border: 1px solid rgba(255, 255, 255, 0.5);
             }
+            /* モーダルのアニメーション用クラス */
+            .modal-open {
+                opacity: 1 !important;
+                pointer-events: auto !important;
+            }
+            .modal-open .modal-content {
+                transform: scale(1) !important;
+            }
         </style>
     </head>
     <body
-        class="bg-animation min-height-screen py-10 px-4 flex items-center justify-center min-h-screen"
+        class="bg-animation min-h-screen py-8 px-4 flex flex-col justify-center items-center"
     >
         <!-- 背景デコレーション -->
         <div class="blob blob-1"></div>
@@ -88,409 +96,400 @@
             >
         </div>
 
+        <!-- メイン入力カード (PC・スマホ双方で最も入力しやすいように中央1カラムに統合) -->
         <div
-            class="w-full max-w-5xl glass-card rounded-3xl shadow-2xl p-6 md:p-10 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8"
+            class="w-full max-w-xl glass-card rounded-3xl shadow-2xl p-6 md:p-8 relative z-10"
         >
-            <!-- 左側：フォーム入力エリア -->
-            <div class="lg:col-span-7 flex flex-col justify-between">
-                <div>
-                    <div class="flex items-center space-x-3 mb-6">
-                        <div
-                            class="bg-blue-600 text-white p-3 rounded-2xl shadow-lg"
-                        >
-                            <i class="fa-solid fa-calendar-plus text-2xl"></i>
-                        </div>
-                        <div>
-                            <h1
-                                class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight"
-                            >
-                                Calendar QR Generator
-                            </h1>
-                            <p class="text-sm text-gray-500 font-medium">
-                                カレンダー登録リンク ＆ ロゴ入りQR生成
-                            </p>
-                        </div>
-                    </div>
-
-                    <form id="scheduleForm" class="space-y-5">
-                        <!-- 予定タイトル -->
-                        <div>
-                            <label
-                                class="block text-gray-700 text-sm font-semibold mb-2"
-                                for="eventTitle"
-                            >
-                                <i
-                                    class="fa-solid fa-pen-to-square mr-1 text-blue-500"
-                                ></i>
-                                予定のタイトル
-                            </label>
-                            <input
-                                type="text"
-                                id="eventTitle"
-                                value="ミーティング＆実演会"
-                                required
-                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200 text-gray-700 font-medium bg-white/50"
-                            />
-                        </div>
-
-                        <!-- イベントタイプ（終日 / 時刻指定）の切り替えトグル -->
-                        <div>
-                            <span
-                                class="block text-gray-700 text-sm font-semibold mb-2"
-                            >
-                                <i
-                                    class="fa-solid fa-clock-rotate-left mr-1 text-green-500"
-                                ></i>
-                                時間設定オプション
-                            </span>
-                            <div
-                                class="grid grid-cols-2 gap-2 p-1 bg-gray-100/80 rounded-xl"
-                            >
-                                <button
-                                    type="button"
-                                    id="btnAllDay"
-                                    onclick="setEventType('allday')"
-                                    class="py-2.5 rounded-lg text-sm font-semibold transition duration-200 bg-white text-blue-600 shadow-sm"
-                                >
-                                    終日（日付のみ）
-                                </button>
-                                <button
-                                    type="button"
-                                    id="btnTimeSpec"
-                                    onclick="setEventType('timespec')"
-                                    class="py-2.5 rounded-lg text-sm font-semibold transition duration-200 text-gray-600 hover:text-gray-800"
-                                >
-                                    時刻指定
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 日時設定コンテナ -->
-                        <div id="datetimeContainer" class="space-y-4">
-                            <!-- 終日イベント用の単一選択 -->
-                            <div
-                                id="alldaySection"
-                                class="grid grid-cols-1 gap-4"
-                            >
-                                <div>
-                                    <label
-                                        class="block text-gray-600 text-xs font-semibold mb-1"
-                                        for="alldayDate"
-                                        >日付</label
-                                    >
-                                    <input
-                                        type="date"
-                                        id="alldayDate"
-                                        value="2026-06-06"
-                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            <!-- 時刻指定用（開始・終了を個別に指定可能、日付をまたぐのにも対応） -->
-                            <div
-                                id="timeSpecSection"
-                                class="hidden grid grid-cols-1 md:grid-cols-2 gap-4"
-                            >
-                                <div class="space-y-3">
-                                    <span
-                                        class="block text-xs font-bold text-blue-600 tracking-wider uppercase"
-                                        >開始日時</span
-                                    >
-                                    <input
-                                        type="date"
-                                        id="startDate"
-                                        value="2026-06-06"
-                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
-                                    />
-                                    <input
-                                        type="time"
-                                        id="startTime"
-                                        value="13:00"
-                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
-                                    />
-                                </div>
-                                <div class="space-y-3">
-                                    <span
-                                        class="block text-xs font-bold text-red-500 tracking-wider uppercase"
-                                        >終了日時</span
-                                    >
-                                    <input
-                                        type="date"
-                                        id="endDate"
-                                        value="2026-06-06"
-                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
-                                    />
-                                    <input
-                                        type="time"
-                                        id="endTime"
-                                        value="14:30"
-                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- タイムゾーン (デフォルト: Asia/Tokyo) -->
-                        <div>
-                            <label
-                                class="block text-gray-700 text-sm font-semibold mb-2"
-                                for="timezone"
-                            >
-                                <i
-                                    class="fa-solid fa-earth-asia mr-1 text-yellow-500"
-                                ></i>
-                                タイムゾーン (ctz)
-                            </label>
-                            <select
-                                id="timezone"
-                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium"
-                            >
-                                <option value="Asia/Tokyo" selected>
-                                    Asia/Tokyo (日本標準時)
-                                </option>
-                                <option value="UTC">UTC (世界協定時)</option>
-                                <option value="America/New_York">
-                                    America/New_York (ニューヨーク)
-                                </option>
-                                <option value="Europe/London">
-                                    Europe/London (ロンドン)
-                                </option>
-                            </select>
-                        </div>
-
-                        <!-- 共有URLの動作オプション（ICSの自動生成/ダウンロードの有無） -->
-                        <div class="pt-4 border-t border-gray-200/60">
-                            <span
-                                class="block text-gray-700 text-sm font-semibold mb-2"
-                            >
-                                <i
-                                    class="fa-solid fa-gear mr-1 text-purple-500"
-                                ></i>
-                                共有URLオプション
-                            </span>
-                            <label
-                                class="flex items-start space-x-3 cursor-pointer bg-white/50 hover:bg-white/80 p-3.5 rounded-xl border border-gray-200 transition duration-150"
-                            >
-                                <input
-                                    type="checkbox"
-                                    id="optAutoIcs"
-                                    checked
-                                    class="mt-1 w-4.5 h-4.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                                />
-                                <div class="flex flex-col">
-                                    <span
-                                        class="text-sm font-semibold text-gray-700"
-                                        >アクセス時にICS（カレンダーファイル）を自動生成/ダウンロードする</span
-                                    >
-                                    <span
-                                        class="text-[11px] text-gray-400 mt-0.5"
-                                        >※OFFにすると、共有URL遷移後にカレンダーファイルは自動ダウンロードされず、登録用の手動ボタンのみが表示されます。</span
-                                    >
-                                </div>
-                            </label>
-                        </div>
-
-                        <button
-                            type="submit"
-                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition duration-200 transform hover:-translate-y-0.5 text-base flex items-center justify-center space-x-2"
-                        >
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>カレンダーURL & QRコードをすべて生成</span>
-                        </button>
-                    </form>
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="bg-blue-600 text-white p-3 rounded-2xl shadow-lg">
+                    <i class="fa-solid fa-calendar-plus text-2xl"></i>
                 </div>
-
-                <!-- フッターノート -->
-                <div
-                    class="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-400 font-medium"
-                >
-                    Google Calendar is a trademark of Google LLC. This tool is
-                    an unofficial generator.
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 tracking-tight">
+                        Calendar QR Generator
+                    </h1>
+                    <p class="text-sm text-gray-500 font-medium">
+                        カレンダー登録リンク ＆ ロゴ入りQR生成
+                    </p>
                 </div>
             </div>
 
-            <!-- 右側：結果表示エリア -->
-            <div
-                class="lg:col-span-5 bg-white/40 rounded-2xl p-6 flex flex-col justify-start items-center border border-white/50 min-h-[450px]"
-            >
-                <!-- 未発行時のプレースホルダー -->
-                <div id="placeholderArea" class="text-center py-24 my-auto">
-                    <div
-                        class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400"
+            <form id="scheduleForm" class="space-y-5">
+                <!-- 予定タイトル -->
+                <div>
+                    <label
+                        class="block text-gray-700 text-sm font-semibold mb-2"
+                        for="eventTitle"
                     >
-                        <i class="fa-solid fa-qrcode text-4xl"></i>
+                        <i
+                            class="fa-solid fa-pen-to-square mr-1 text-blue-500"
+                        ></i>
+                        予定のタイトル
+                    </label>
+                    <input
+                        type="text"
+                        id="eventTitle"
+                        value="ミーティング＆実演会"
+                        required
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-200 text-gray-700 font-medium bg-white/50"
+                    />
+                </div>
+
+                <!-- イベントタイプ（終日 / 時刻指定）の切り替えトグル -->
+                <div>
+                    <span
+                        class="block text-gray-700 text-sm font-semibold mb-2"
+                    >
+                        <i
+                            class="fa-solid fa-clock-rotate-left mr-1 text-green-500"
+                        ></i>
+                        時間設定オプション
+                    </span>
+                    <div
+                        class="grid grid-cols-2 gap-2 p-1 bg-gray-100/80 rounded-xl"
+                    >
+                        <button
+                            type="button"
+                            id="btnAllDay"
+                            onclick="setEventType('allday')"
+                            class="py-2.5 rounded-lg text-sm font-semibold transition duration-200 bg-white text-blue-600 shadow-sm"
+                        >
+                            終日（日付のみ）
+                        </button>
+                        <button
+                            type="button"
+                            id="btnTimeSpec"
+                            onclick="setEventType('timespec')"
+                            class="py-2.5 rounded-lg text-sm font-semibold transition duration-200 text-gray-600 hover:text-gray-800"
+                        >
+                            時刻指定
+                        </button>
                     </div>
-                    <p class="text-gray-500 font-semibold">生成準備完了</p>
-                    <p class="text-xs text-gray-400 mt-2">
-                        必要情報を入力してボタンを押してください
+                </div>
+
+                <!-- 日時設定コンテナ -->
+                <div id="datetimeContainer" class="space-y-4">
+                    <!-- 終日イベント用の単一選択 -->
+                    <div id="alldaySection" class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label
+                                class="block text-gray-600 text-xs font-semibold mb-1"
+                                for="alldayDate"
+                                >日付</label
+                            >
+                            <input
+                                type="date"
+                                id="alldayDate"
+                                value="2026-06-06"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- 時刻指定用（開始・終了を個別に指定可能、日付をまたぐのにも対応） -->
+                    <div
+                        id="timeSpecSection"
+                        class="hidden grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
+                        <div class="space-y-3">
+                            <span
+                                class="block text-xs font-bold text-blue-600 tracking-wider uppercase"
+                                >開始日時</span
+                            >
+                            <input
+                                type="date"
+                                id="startDate"
+                                value="2026-06-06"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
+                            />
+                            <input
+                                type="time"
+                                id="startTime"
+                                value="13:00"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
+                            />
+                        </div>
+                        <div class="space-y-3">
+                            <span
+                                class="block text-xs font-bold text-red-500 tracking-wider uppercase"
+                                >終了日時</span
+                            >
+                            <input
+                                type="date"
+                                id="endDate"
+                                value="2026-06-06"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
+                            />
+                            <input
+                                type="time"
+                                id="endTime"
+                                value="14:30"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium text-sm"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- タイムゾーン (デフォルト: Asia/Tokyo) -->
+                <div>
+                    <label
+                        class="block text-gray-700 text-sm font-semibold mb-2"
+                        for="timezone"
+                    >
+                        <i
+                            class="fa-solid fa-earth-asia mr-1 text-yellow-500"
+                        ></i>
+                        タイムゾーン (ctz)
+                    </label>
+                    <select
+                        id="timezone"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white/50 text-gray-700 font-medium"
+                    >
+                        <option value="Asia/Tokyo" selected>
+                            Asia/Tokyo (日本標準時)
+                        </option>
+                        <option value="UTC">UTC (世界協定時)</option>
+                        <option value="America/New_York">
+                            America/New_York (ニューヨーク)
+                        </option>
+                        <option value="Europe/London">
+                            Europe/London (ロンドン)
+                        </option>
+                    </select>
+                </div>
+
+                <!-- 共有URLの動作オプション（ICSの自動生成/ダウンロードの有無） -->
+                <div class="pt-4 border-t border-gray-200/60">
+                    <span
+                        class="block text-gray-700 text-sm font-semibold mb-2"
+                    >
+                        <i class="fa-solid fa-gear mr-1 text-purple-500"></i>
+                        共有URLオプション
+                    </span>
+                    <label
+                        class="flex items-start space-x-3 cursor-pointer bg-white/50 hover:bg-white/80 p-3.5 rounded-xl border border-gray-200 transition duration-150"
+                    >
+                        <input
+                            type="checkbox"
+                            id="optAutoIcs"
+                            checked
+                            class="mt-1 w-4.5 h-4.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        />
+                        <div class="flex flex-col">
+                            <span class="text-sm font-semibold text-gray-700"
+                                >アクセス時にICSファイルを自動ダウンロードする</span
+                            >
+                            <span class="text-[11px] text-gray-400 mt-0.5"
+                                >※OFFにすると、共有URL遷移後に自動ダウンロードは行われず、登録用の選択ボタンのみが表示されます。</span
+                            >
+                        </div>
+                    </label>
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition duration-200 transform hover:-translate-y-0.5 text-base flex items-center justify-center space-x-2"
+                >
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>カレンダーURL & QRコードをすべて生成</span>
+                </button>
+            </form>
+
+            <!-- フッターノート -->
+            <div
+                class="mt-8 pt-4 border-t border-gray-100 text-xs text-center text-gray-400 font-medium"
+            >
+                Google Calendar is a trademark of Google LLC. This tool is an
+                unofficial generator.
+            </div>
+        </div>
+
+        <!-- 画面オーバーレイ (モーダル) コンテナ -->
+        <div
+            id="resultModal"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300"
+        >
+            <!-- ダーク背景オーバーレイ (クリックで閉じる) -->
+            <div
+                class="absolute inset-0 bg-gray-950/70 backdrop-blur-sm"
+                onclick="closeModal()"
+            ></div>
+
+            <!-- モーダルコンテンツカード -->
+            <div
+                class="modal-content bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full relative z-10 transform scale-95 transition-all duration-300 overflow-y-auto max-h-[90vh]"
+            >
+                <!-- 閉じるボタン -->
+                <button
+                    onclick="closeModal()"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-full hover:bg-gray-100"
+                >
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+
+                <!-- タイトルヘッダー -->
+                <div class="text-center mb-5">
+                    <h2 class="text-xl font-bold text-gray-800">生成完了！</h2>
+                    <p class="text-xs text-gray-400 mt-1">
+                        用途に合わせてタブを切り替えてご活用ください
                     </p>
                 </div>
 
-                <!-- 発行された結果表示コンテナ -->
+                <!-- タブナビゲーション -->
                 <div
-                    id="resultArea"
-                    class="hidden w-full space-y-5 text-center flex flex-col h-full justify-between"
+                    class="bg-gray-100/80 p-1 rounded-xl grid grid-cols-2 gap-1 w-full mb-4"
                 >
-                    <!-- タブナビゲーション -->
-                    <div
-                        class="bg-gray-100/80 p-1 rounded-xl grid grid-cols-2 gap-1 w-full"
+                    <button
+                        id="btnTabGoogle"
+                        onclick="switchResultTab('google')"
+                        class="py-2.5 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 bg-white text-blue-600 shadow-sm flex items-center justify-center space-x-1"
                     >
-                        <button
-                            id="btnTabGoogle"
-                            onclick="switchResultTab('google')"
-                            class="py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 bg-white text-blue-600 shadow-sm flex items-center justify-center space-x-1"
-                        >
-                            <i class="fa-brands fa-google text-xs"></i>
-                            <span>Google直接追加</span>
-                        </button>
-                        <button
-                            id="btnTabShare"
-                            onclick="switchResultTab('share')"
-                            class="py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1"
-                        >
-                            <i class="fa-solid fa-share-nodes text-xs"></i>
-                            <span>共有用URL (ICS中継)</span>
-                        </button>
-                    </div>
-
-                    <!-- 1. Googleカレンダー直接追加用コンテンツ -->
-                    <div id="contentGoogle" class="space-y-4 py-2">
-                        <h3
-                            class="text-sm font-bold text-gray-800 flex items-center justify-center"
-                        >
-                            <span
-                                class="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-pulse"
-                            ></span>
-                            Googleカレンダー直接登録QR
-                        </h3>
-
-                        <!-- QRコードキャンバス -->
-                        <div
-                            class="relative inline-block p-4 bg-white rounded-2xl shadow-xl border border-gray-100"
-                        >
-                            <canvas
-                                id="qrCanvas"
-                                width="256"
-                                height="256"
-                                class="mx-auto block"
-                            ></canvas>
-                        </div>
-                        <p class="text-[11px] text-gray-400 font-medium">
-                            ※スマホのカメラでスキャンすると自動でカレンダー登録画面が開きます
-                        </p>
-
-                        <div class="space-y-2.5 pt-2">
-                            <!-- 直接登録用リンクボタン -->
-                            <a
-                                id="calendarDirectLink"
-                                href="#"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold py-2.5 px-4 rounded-xl border border-blue-200 transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
-                            >
-                                <i
-                                    class="fa-solid fa-arrow-up-right-from-square"
-                                ></i>
-                                <span>ブラウザでテスト登録する</span>
-                            </a>
-
-                            <!-- URLコピーボタン -->
-                            <button
-                                onclick="copyLink('calendarDirectLink')"
-                                class="w-full bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 font-semibold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
-                            >
-                                <i class="fa-solid fa-copy"></i>
-                                <span>登録用URLをコピー</span>
-                            </button>
-
-                            <!-- QRコード画像保存ボタン -->
-                            <button
-                                onclick="
-                                    downloadQRCode(
-                                        'qrCanvas',
-                                        'google_calendar_qr',
-                                    )
-                                "
-                                class="w-full bg-gray-800 text-white hover:bg-gray-900 font-bold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
-                            >
-                                <i class="fa-solid fa-download"></i>
-                                <span>ロゴ入りQR画像を保存</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 2. 共有用URL (ICS形式) コンテンツ -->
-                    <div id="contentShare" class="hidden space-y-4 py-2">
-                        <h3
-                            class="text-sm font-bold text-gray-800 flex items-center justify-center"
-                        >
-                            <span
-                                class="w-2 h-2 rounded-full bg-purple-500 mr-2 animate-pulse"
-                            ></span>
-                            共有用URL
-                        </h3>
-
-                        <!-- 共有用QRコードキャンバス -->
-                        <div
-                            class="relative inline-block p-4 bg-white rounded-2xl shadow-xl border border-gray-100"
-                        >
-                            <canvas
-                                id="shareQrCanvas"
-                                width="256"
-                                height="256"
-                                class="mx-auto block"
-                            ></canvas>
-                        </div>
-                        <p
-                            id="shareQrDesc"
-                            class="text-[11px] text-gray-400 font-medium"
-                        >
-                            ※ICS配信サーバーを経由して様々な端末へ予定を共有できます
-                        </p>
-
-                        <div class="space-y-2.5 pt-2">
-                            <!-- 直接リンクボタン -->
-                            <a
-                                id="shareDirectLink"
-                                href="#"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="w-full bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold py-2.5 px-4 rounded-xl border border-purple-200 transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
-                            >
-                                <i class="fa-solid fa-link"></i>
-                                <span>共有URLにアクセスする</span>
-                            </a>
-
-                            <!-- URLコピーボタン -->
-                            <button
-                                onclick="copyLink('shareDirectLink')"
-                                class="w-full bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 font-semibold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
-                            >
-                                <i class="fa-solid fa-copy"></i>
-                                <span>共有用URLをコピー</span>
-                            </button>
-
-                            <!-- QRコード画像保存ボタン -->
-                            <button
-                                onclick="
-                                    downloadQRCode(
-                                        'shareQrCanvas',
-                                        'share_calendar_qr',
-                                    )
-                                "
-                                class="w-full bg-gray-800 text-white hover:bg-gray-900 font-bold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
-                            >
-                                <i class="fa-solid fa-download"></i>
-                                <span>共有用QR画像を保存</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 裏でqrcodejsが描画するための一時的な非表示コンテナ -->
-                    <div id="hidden-qr" class="hidden"></div>
-                    <div id="hidden-share-qr" class="hidden"></div>
+                        <i class="fa-brands fa-google text-xs"></i>
+                        <span>Google直接追加</span>
+                    </button>
+                    <button
+                        id="btnTabShare"
+                        onclick="switchResultTab('share')"
+                        class="py-2.5 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1"
+                    >
+                        <i class="fa-solid fa-share-nodes text-xs"></i>
+                        <span>共有用URL (ICS中継)</span>
+                    </button>
                 </div>
+
+                <!-- 1. Googleカレンダー直接追加用コンテンツ -->
+                <div id="contentGoogle" class="space-y-4 text-center">
+                    <h3
+                        class="text-sm font-bold text-gray-800 flex items-center justify-center"
+                    >
+                        <span
+                            class="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-pulse"
+                        ></span>
+                        Googleカレンダー直接登録QR
+                    </h3>
+
+                    <!-- QRコードキャンバス -->
+                    <div
+                        class="relative inline-block p-4 bg-white rounded-2xl shadow-lg border border-gray-100 mx-auto"
+                    >
+                        <canvas
+                            id="qrCanvas"
+                            width="220"
+                            height="220"
+                            class="mx-auto block max-w-full h-auto"
+                        ></canvas>
+                    </div>
+                    <p class="text-[11px] text-gray-400 font-medium">
+                        ※スマホのカメラでスキャンすると自動でカレンダー登録画面が開きます
+                    </p>
+
+                    <div class="space-y-2.5 pt-2">
+                        <!-- 直接登録用リンクボタン -->
+                        <a
+                            id="calendarDirectLink"
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold py-2.5 px-4 rounded-xl border border-blue-200 transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
+                        >
+                            <i
+                                class="fa-solid fa-arrow-up-right-from-square"
+                            ></i>
+                            <span>ブラウザでテスト登録する</span>
+                        </a>
+
+                        <!-- URLコピーボタン -->
+                        <button
+                            onclick="copyLink('calendarDirectLink')"
+                            class="w-full bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 font-semibold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
+                        >
+                            <i class="fa-solid fa-copy"></i>
+                            <span>登録用URLをコピー</span>
+                        </button>
+
+                        <!-- QRコード画像保存ボタン -->
+                        <button
+                            onclick="
+                                downloadQRCode('qrCanvas', 'google_calendar_qr')
+                            "
+                            class="w-full bg-gray-800 text-white hover:bg-gray-900 font-bold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
+                        >
+                            <i class="fa-solid fa-download"></i>
+                            <span>ロゴ入りQR画像を保存</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. 共有用URL (ICS形式) コンテンツ -->
+                <div id="contentShare" class="hidden space-y-4 text-center">
+                    <h3
+                        class="text-sm font-bold text-gray-800 flex items-center justify-center"
+                    >
+                        <span
+                            class="w-2 h-2 rounded-full bg-purple-500 mr-2 animate-pulse"
+                        ></span>
+                        マルチ共有用URL (ICS中継)
+                    </h3>
+
+                    <!-- 共有用QRコードキャンバス -->
+                    <div
+                        class="relative inline-block p-4 bg-white rounded-2xl shadow-lg border border-gray-100 mx-auto"
+                    >
+                        <canvas
+                            id="shareQrCanvas"
+                            width="220"
+                            height="220"
+                            class="mx-auto block max-w-full h-auto"
+                        ></canvas>
+                    </div>
+                    <p
+                        id="shareQrDesc"
+                        class="text-[11px] text-gray-400 font-medium"
+                    >
+                        ※ICS配信サーバーを経由して様々な端末へ予定を共有できます
+                    </p>
+
+                    <div class="space-y-2.5 pt-2">
+                        <!-- 直接リンクボタン -->
+                        <a
+                            id="shareDirectLink"
+                            href="#"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="w-full bg-purple-50 text-purple-700 hover:bg-purple-100 font-bold py-2.5 px-4 rounded-xl border border-purple-200 transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
+                        >
+                            <i class="fa-solid fa-link"></i>
+                            <span>共有URLにアクセスする</span>
+                        </a>
+
+                        <!-- URLコピーボタン -->
+                        <button
+                            onclick="copyLink('shareDirectLink')"
+                            class="w-full bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 font-semibold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
+                        >
+                            <i class="fa-solid fa-copy"></i>
+                            <span>共有用URLをコピー</span>
+                        </button>
+
+                        <!-- QRコード画像保存ボタン -->
+                        <button
+                            onclick="
+                                downloadQRCode(
+                                    'shareQrCanvas',
+                                    'share_calendar_qr',
+                                )
+                            "
+                            class="w-full bg-gray-800 text-white hover:bg-gray-900 font-bold py-2.5 px-4 rounded-xl transition duration-150 inline-flex items-center justify-center space-x-2 text-xs shadow-sm"
+                        >
+                            <i class="fa-solid fa-download"></i>
+                            <span>共有用QR画像を保存</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 裏でqrcodejsが描画するための一時的な非表示コンテナ -->
+                <div id="hidden-qr" class="hidden"></div>
+                <div id="hidden-share-qr" class="hidden"></div>
             </div>
         </div>
 
@@ -499,6 +498,27 @@
             let currentEventType = "allday";
             // 現在アクティブな結果表示タブ ('google' または 'share')
             let currentResultTab = "google";
+
+            // モーダルを開く関数
+            function openModal() {
+                const modal = document.getElementById("resultModal");
+                modal.classList.add("modal-open");
+                document.body.style.overflow = "hidden"; // モーダル表示中は背後のスクロールを防ぐ
+            }
+
+            // モーダルを閉じる関数
+            function closeModal() {
+                const modal = document.getElementById("resultModal");
+                modal.classList.remove("modal-open");
+                document.body.style.overflow = ""; // スクロール制限を解除
+            }
+
+            // キーボードの Esc キーでモーダルを閉じられるようにする
+            window.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    closeModal();
+                }
+            });
 
             // 切り替え処理
             function setEventType(type) {
@@ -536,16 +556,16 @@
 
                 if (tab === "google") {
                     btnGoogle.className =
-                        "py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 bg-white text-blue-600 shadow-sm flex items-center justify-center space-x-1";
+                        "py-2.5 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 bg-white text-blue-600 shadow-sm flex items-center justify-center space-x-1";
                     btnShare.className =
-                        "py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1";
+                        "py-2.5 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1";
                     contentGoogle.classList.remove("hidden");
                     contentShare.classList.add("hidden");
                 } else {
                     btnGoogle.className =
-                        "py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1";
+                        "py-2.5 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1";
                     btnShare.className =
-                        "py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 bg-white text-purple-600 shadow-sm flex items-center justify-center space-x-1";
+                        "py-2.5 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 bg-white text-purple-600 shadow-sm flex items-center justify-center space-x-1";
                     contentGoogle.classList.add("hidden");
                     contentShare.classList.remove("hidden");
                 }
@@ -583,7 +603,7 @@
                 showToast("リンクをクリップボードにコピーしました！");
             }
 
-            // 動的にGoogleカレンダー風のアイコンをSVG(DataURL)として生成する関数
+            // 動的にGoogleカレンダー風のアイコンをSVG(Base64)として生成する関数 (iOSのSafari対応)
             function getGoogleCalendarLogo(day) {
                 const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100" height="100">
@@ -594,10 +614,14 @@
   <text x="24" y="34" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="19" font-weight="bold" fill="#4285F4" text-anchor="middle" dominant-baseline="middle">${day}</text>
 </svg>
 `;
-                return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+                // スマホのCanvasバグ・セキュリティ汚染防止のため完全にBase64化する
+                return (
+                    "data:image/svg+xml;base64," +
+                    btoa(unescape(encodeURIComponent(svg)))
+                );
             }
 
-            // 共有アイコン付きの動的ロゴ（ICS配信用）を生成する関数
+            // 共有アイコン付きの動的ロゴ（ICS配信用）を生成する関数 (iOSのSafari対応)
             function getShareLogo(day) {
                 const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="100" height="100">
@@ -607,7 +631,10 @@
   <text x="24" y="37" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12" font-weight="bold" fill="#9333ea" text-anchor="middle" dominant-baseline="middle">${day}日予定</text>
 </svg>
 `;
-                return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+                return (
+                    "data:image/svg+xml;base64," +
+                    btoa(unescape(encodeURIComponent(svg)))
+                );
             }
 
             // フォームの送信時イベント
@@ -672,8 +699,9 @@
                         const endDt = new Date(`${eDate}T${eTime}`);
 
                         if (endDt <= startDt) {
-                            alert(
-                                "エラー: 終了日時は開始日時よりも後の時間を設定してください。",
+                            // alert()は禁止事項のため、トースト通知で親切に表示
+                            showToast(
+                                "エラー: 終了日時は開始日時より後に設定してください",
                             );
                             return;
                         }
@@ -754,16 +782,11 @@
                         getShareLogo,
                     );
 
-                    // プレースホルダーを隠して結果を表示
-                    document
-                        .getElementById("placeholderArea")
-                        .classList.add("hidden");
-                    document
-                        .getElementById("resultArea")
-                        .classList.remove("hidden");
+                    // モーダルを開いて、結果を画面中央に美しくポップアップ表示
+                    openModal();
                 });
 
-            // ロゴ入りのQRコードをCanvas上で合成して生成する共通ロジック
+            // ロゴ入りのQRコードをCanvas上で合成して生成する共通ロジック (スマホ環境対応版)
             function generateLogoQR(
                 url,
                 day,
@@ -784,41 +807,93 @@
                     correctLevel: QRCode.CorrectLevel.H, // 真ん中にロゴを重ねても読めるように最高レベルに設定
                 });
 
-                // qrcode.jsのレンダリング完了を待つ
+                // qrcode.jsがスマホとPCで吐き出すタグの違い(canvas vs img)を両方カバーする監視ポーリング
+                let attempts = 0;
                 const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (attempts > 80) {
+                        // 最大約4秒でタイムアウト
+                        clearInterval(checkInterval);
+                        console.error(
+                            "QR Code Generation Timeout on element:",
+                            canvasId,
+                        );
+                        return;
+                    }
+
                     const qrCanvas = hiddenDiv.querySelector("canvas");
-                    if (qrCanvas) {
+                    const qrImg = hiddenDiv.querySelector("img");
+
+                    let sourceElement = null;
+                    let isImgType = false;
+
+                    // スマホでは qrImg の src にBase64が書き込まれる
+                    if (
+                        qrImg &&
+                        qrImg.src &&
+                        qrImg.src.startsWith("data:image")
+                    ) {
+                        sourceElement = qrImg;
+                        isImgType = true;
+                    } else if (qrCanvas && qrCanvas.getContext) {
+                        // PCブラウザ等では canvas要素にそのままレンダリングされる
+                        sourceElement = qrCanvas;
+                        isImgType = false;
+                    }
+
+                    if (sourceElement) {
                         clearInterval(checkInterval);
 
-                        // 1. メインCanvasにQRコードを丸ごと転写
-                        ctx.clearRect(0, 0, 256, 256);
-                        ctx.drawImage(qrCanvas, 0, 0, 256, 256);
+                        const drawAndMergeLogo = (resolvedSource) => {
+                            // 1. メインCanvasにQRコードを丸ごと転写
+                            ctx.clearRect(0, 0, 220, 220); // サイズをモーダルに合わせて調整
+                            ctx.drawImage(resolvedSource, 0, 0, 220, 220);
 
-                        // 2. 中央にロゴを配置するための白い背景(背景座)を描画
-                        const logoSize = 48; // ロゴの描画サイズ
-                        const bgSize = 56; // 白い土台のサイズ
-                        const x = (256 - bgSize) / 2;
-                        const y = (256 - bgSize) / 2;
+                            // 2. 中央にロゴを配置するための白い背景(背景座)を描画
+                            const logoSize = 42; // ロゴの描画サイズ
+                            const bgSize = 48; // 白い土台のサイズ
+                            const x = (220 - bgSize) / 2;
+                            const y = (220 - bgSize) / 2;
 
-                        ctx.fillStyle = "#ffffff";
-                        ctx.beginPath();
-                        if (ctx.roundRect) {
-                            ctx.roundRect(x, y, bgSize, bgSize, 12);
-                        } else {
-                            ctx.rect(x, y, bgSize, bgSize);
-                        }
-                        ctx.fill();
+                            ctx.fillStyle = "#ffffff";
+                            ctx.beginPath();
+                            if (ctx.roundRect) {
+                                ctx.roundRect(x, y, bgSize, bgSize, 10);
+                            } else {
+                                ctx.rect(x, y, bgSize, bgSize);
+                            }
+                            ctx.fill();
 
-                        // 3. 動的ロゴSVGを読み込んでCanvasの中央に描画
-                        const logoImg = new Image();
-                        logoImg.src = logoGeneratorFunc(day);
-                        logoImg.onload = function () {
-                            const lx = (256 - logoSize) / 2;
-                            const ly = (256 - logoSize) / 2;
-                            ctx.drawImage(logoImg, lx, ly, logoSize, logoSize);
+                            // 3. 動的ロゴSVGを読み込んでCanvasの中央に描画 (Base64化済みのためiOS Safari等でも100%確実に描画される)
+                            const logoImg = new Image();
+                            logoImg.crossOrigin = "anonymous";
+                            logoImg.onload = function () {
+                                const lx = (220 - logoSize) / 2;
+                                const ly = (220 - logoSize) / 2;
+                                ctx.drawImage(
+                                    logoImg,
+                                    lx,
+                                    ly,
+                                    logoSize,
+                                    logoSize,
+                                );
+                            };
+                            logoImg.src = logoGeneratorFunc(day);
                         };
+
+                        if (isImgType) {
+                            // imgタグの場合はロード完了させてから描画
+                            const tempImg = new Image();
+                            tempImg.onload = function () {
+                                drawAndMergeLogo(tempImg);
+                            };
+                            tempImg.src = sourceElement.src;
+                        } else {
+                            // canvasの場合は即座に描画
+                            drawAndMergeLogo(sourceElement);
+                        }
                     }
-                }, 30);
+                }, 50);
             }
 
             // QRコード画像をPNG形式でダウンロード保存する処理
