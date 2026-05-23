@@ -259,6 +259,38 @@
                             </select>
                         </div>
 
+                        <!-- 共有URLの動作オプション（ICSの自動生成/ダウンロードの有無） -->
+                        <div class="pt-4 border-t border-gray-200/60">
+                            <span
+                                class="block text-gray-700 text-sm font-semibold mb-2"
+                            >
+                                <i
+                                    class="fa-solid fa-gear mr-1 text-purple-500"
+                                ></i>
+                                共有URLオプション
+                            </span>
+                            <label
+                                class="flex items-start space-x-3 cursor-pointer bg-white/50 hover:bg-white/80 p-3.5 rounded-xl border border-gray-200 transition duration-150"
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="optAutoIcs"
+                                    checked
+                                    class="mt-1 w-4.5 h-4.5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                />
+                                <div class="flex flex-col">
+                                    <span
+                                        class="text-sm font-semibold text-gray-700"
+                                        >アクセス時にICS（カレンダーファイル）を自動生成/ダウンロードする</span
+                                    >
+                                    <span
+                                        class="text-[11px] text-gray-400 mt-0.5"
+                                        >※OFFにすると、共有URL遷移後にカレンダーファイルは自動ダウンロードされず、登録用の手動ボタンのみが表示されます。</span
+                                    >
+                                </div>
+                            </label>
+                        </div>
+
                         <button
                             type="submit"
                             class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transition duration-200 transform hover:-translate-y-0.5 text-base flex items-center justify-center space-x-2"
@@ -318,7 +350,7 @@
                             class="py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 text-gray-600 hover:text-gray-800 flex items-center justify-center space-x-1"
                         >
                             <i class="fa-solid fa-share-nodes text-xs"></i>
-                            <span>共有用URL (ICS)</span>
+                            <span>共有用URL (ICS中継)</span>
                         </button>
                     </div>
 
@@ -396,7 +428,7 @@
                             <span
                                 class="w-2 h-2 rounded-full bg-purple-500 mr-2 animate-pulse"
                             ></span>
-                            マルチ共有用URL (ICS中継)
+                            共有用URL
                         </h3>
 
                         <!-- 共有用QRコードキャンバス -->
@@ -410,7 +442,10 @@
                                 class="mx-auto block"
                             ></canvas>
                         </div>
-                        <p class="text-[11px] text-gray-400 font-medium">
+                        <p
+                            id="shareQrDesc"
+                            class="text-[11px] text-gray-400 font-medium"
+                        >
                             ※ICS配信サーバーを経由して様々な端末へ予定を共有できます
                         </p>
 
@@ -584,6 +619,8 @@
                     // 1. 各種インプットのバリュー取得
                     const title = document.getElementById("eventTitle").value;
                     const timezone = document.getElementById("timezone").value;
+                    const optAutoIcs =
+                        document.getElementById("optAutoIcs").checked;
                     let startStr = "";
                     let endStr = "";
                     let renderDay = 1; // QRカレンダーロゴに描画する日付
@@ -674,14 +711,25 @@
                     const finalGoogleCalUrl = `${baseUrl}?${gCalParams.toString()}`;
 
                     // 3. 共有用URLの組み立て
-                    // ユーザーの希望形式: https://apps.nknighta.me/schedule?date=20260606&time=&addcaltype=ics
                     const shareBaseUrl = "https://apps.nknighta.me/schedule";
                     const shareParams = new URLSearchParams({
                         date: shareDateParam,
                         time: shareTimeParam,
-                        addcaltype: "ics",
                         title: title, // 各アプリ側でも予定を特定できるようタイトルも付与
                     });
+
+                    // 自動ICSダウンロードオプションの有無をパラメータに反映
+                    const qrDescEl = document.getElementById("shareQrDesc");
+                    if (optAutoIcs) {
+                        shareParams.set("addcaltype", "ics");
+                        qrDescEl.textContent =
+                            "※中継ページ遷移後、ICSファイルが自動でダウンロードされます";
+                    } else {
+                        // オプションOFFの場合は addcaltype をパラメータに含めない
+                        qrDescEl.textContent =
+                            "※中継ページ遷移後、ユーザーが任意の方法（Google/Apple等）で登録できます";
+                    }
+
                     const finalShareUrl = `${shareBaseUrl}?${shareParams.toString()}`;
 
                     // 4. 各種直接登録リンクボタンのhref更新
